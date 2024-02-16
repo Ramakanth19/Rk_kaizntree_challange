@@ -1,0 +1,207 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  .login-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+  }
+  
+  h1 {
+    color: #333;
+    text-align: center;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  .form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box;
+  }
+  
+  .form-actions {
+    text-align: center;
+  }
+  
+  .form-actions button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #5cb85c;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .options {
+    margin-top: 10px;
+  }
+  
+  .options a {
+    color: #5cb85c;
+    text-decoration: none;
+    margin: 0 5px;
+  }
+  
+  .options a:hover {
+    text-decoration: underline;
+  }
+  
+  .error-message {
+    color: red; /* Error message color */
+    margin-bottom: 10px; /* Spacing below the error message */
+    text-align: center; /* Center-align the text */
+    height: 20px; /* Ensure the container has a height to prevent layout shift */
+  }
+  .dashboard-header {
+    background-color: #fff;
+    padding: 10px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.dashboard-header h1 {
+    margin: 0;
+}
+
+.dashboard-stats {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+}
+
+.dashboard-controls {
+    margin: 20px;
+    text-align: center;
+}
+
+.button {
+    padding: 10px 20px;
+    margin-right: 10px;
+    background-color: #26a69a;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.search-bar {
+    display: inline-block;
+}
+
+.search-bar input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    margin-right: -3px; /* Align with the button */
+}
+
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.items-table th, .items-table td {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.items-table th {
+    background-color: #f5f5f5;
+}
+
+.items-table tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .dashboard-controls,
+    .dashboard-stats {
+        flex-direction: column;
+    }
+    
+    .search-bar {
+        margin-top: 10px;
+    }
+}
+
+.user-controls {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
+.logout {
+  background-color: #d32f2f;
+}
+
+/* ... existing styles ... */
+
+@media (max-width: 768px) {
+  .user-controls {
+      position: static;
+      margin: 10px 0;
+  }
+}
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+.modal-content {
+  position: relative;
+  background-color: #fefefe;
+  margin: 10% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+  max-width: 500px; /* Adjust based on your preference */
+}
+
+.close {
+  color: #aaa;
+  position: absolute;
+  top: 10px;
+  right: 25px;
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}

@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password</title>
+    <!-- Link to the CSS file for styling the reset password page -->
+    <link rel="stylesheet" href="{% static 'css/reset_styles.css' %}">
+</head>
+<body>
+    <!-- Container for the reset password form -->
+    <div class="reset-password-container">
+        <h1>Reset Password</h1>
+        <!-- Form for submitting the new password -->
+        <form id="resetPasswordForm">
+            <div class="form-group">
+                <label for="newPassword">New Password</label>
+                <input type="password" id="newPassword" name="newPassword" required>
+            </div>
+            <div class="form-group">
+                <label for="confirmNewPassword">Confirm New Password</label>
+                <input type="password" id="confirmNewPassword" name="confirmNewPassword" required>
+            </div>
+            <!-- Submit button for the form -->
+            <button type="submit">Reset Password</button>
+        </form>
+    </div>
+    <script>
+    // JavaScript to handle the form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        // Extract UID and token from URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const uid = params.get('uid');
+        const token = params.get('token');
+    
+        // Add event listener for form submission
+        document.getElementById('resetPasswordForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission behavior
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+    
+            // Check if new passwords match
+            if (newPassword !== confirmNewPassword) {
+                alert('Passwords do not match.'); // Show alert if passwords do not match
+                return;
+            }
+    
+            // POST request to reset password
+            fetch('/api/accounts/reset-password/', {
+                method: 'POST',
+                headers: {
+                    'X-API-KEY':"{{ api_key }}",
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    uid: uid,
+                    token: token,
+                    newPassword: newPassword
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    // On successful password reset, redirect to login page
+                    alert('Your password has been reset successfully.');
+                    window.location.href = '/accounts/login_page';
+                } else {
+                    // Handle errors returned by the server
+                    response.json().then(data => alert(data.error || 'Something went wrong.'));
+                }
+            })
+            .catch(error => {
+                // Log and alert any error during the fetch operation
+                console.error('Error:', error);
+                alert('Failed to reset password.');
+            });
+        });
+    });
+    </script>
+</body>
+</html>

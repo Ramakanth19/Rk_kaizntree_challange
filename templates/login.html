@@ -1,0 +1,226 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaizntree Login</title>
+    <!-- Linking the stylesheet for styling the page -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <!-- Login Container -->
+    <div class="login-container">
+        <h1>Welcome to Kaizntree</h1>
+        <!-- Login Form -->
+        <form id="loginForm">
+            {% csrf_token %}
+            <!-- Username Field -->
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <!-- Password Field -->
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <!-- Login and Additional Options -->
+            <div class="form-group form-actions">
+                <button type="submit">Login</button>
+                <div class="options">
+                    <!-- Links for additional actions -->
+                    <a href="#">Create Account</a>
+                    <a href="#">Forgot Password?</a>
+                </div>
+            </div>
+        </form>
+        <!-- Error Message Display -->
+        <div id="error-message" class="error-message"></div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div id="registrationModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create Account</h2>
+            <!-- Registration Form -->
+            <form id="registrationForm">
+                <!-- Fields for registration -->
+                <div class="form-group">
+                    <label for="regUsername">Username</label>
+                    <input type="text" id="regUsername" name="regUsername" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" name="regPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Re-enter Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="text" id="email" name="email" required>
+                </div>
+                <div class="form-group form-actions">
+                    <button type="submit">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Forgot Password</h2>
+            <!-- Forgot Password Form -->
+            <form id="forgotPasswordForm">
+                <div class="form-group">
+                    <label for="forgotEmail">Email</label>
+                    <input type="email" id="forgotEmail" name="forgotEmail" required>
+                </div>
+                <div class="form-group form-actions">
+                    <button type="submit">Send Reset Link</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for an existing auth token in local storage and redirect if found
+            const authToken = localStorage.getItem('authToken');
+            if (authToken) {
+                window.location.href = '/accounts/dashboard'; // Redirect to the dashboard if the user is already logged in
+            }
+    
+            // Login form submission handling
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent the form from submitting the traditional way
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+    
+                // Make a POST request to the login API endpoint
+                fetch('/api/accounts/login/', {
+                    method: 'POST',
+                    headers: {
+                        'X-API-KEY': "{{ api_key }}", // Replace with your actual API key variable
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value, // CSRF token for Django forms
+                    },
+                    body: JSON.stringify({ username: username, password: password })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.token) {
+                        localStorage.setItem('authToken', data.token); // Store the login token in local storage
+                        window.location.href = '/accounts/dashboard/'; // Redirect to the dashboard after successful login
+                    } else {
+                        // Display an error message if login fails
+                        document.getElementById('error-message').textContent = 'Invalid Username or Password';
+                    }
+                })
+                .catch(error => {
+                    // Log and display any network errors
+                    console.error('Error:', error);
+                    document.getElementById('error-message').textContent = 'Login failed. Please try again.';
+                });
+            });
+    
+            // Event listener to open the registration modal
+            document.querySelector('.options a:first-child').addEventListener('click', function(e) {
+                e.preventDefault(); // Prevent the default link behavior
+                document.getElementById('registrationModal').style.display = 'block'; // Show the registration modal
+            });
+    
+            // Event listener to close the registration modal
+            document.querySelector('#registrationModal .close').addEventListener('click', function() {
+                document.getElementById('registrationModal').style.display = 'none'; // Hide the registration modal
+            });
+    
+            // Registration form submission handling
+            document.getElementById('registrationForm').addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent the form from submitting the traditional way
+                const username = document.getElementById('regUsername').value;
+                const password = document.getElementById('regPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const email = document.getElementById('email').value;
+    
+                // Check if the passwords match
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match.'); // Alert the user if passwords do not match
+                    return;
+                }
+    
+                // Make a POST request to the registration API endpoint
+                fetch('/api/accounts/register/', {
+                    method: 'POST',
+                    headers: {
+                        'X-API-KEY': "{{ api_key }}", // Replace with your actual API key variable
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value, // CSRF token for Django forms
+                    },
+                    body: JSON.stringify({ username: username, password: password, email: email })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Registration failed');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert('Account created successfully! Please login.'); // Alert the user upon successful account creation
+                    document.getElementById('registrationModal').style.display = 'none'; // Hide the registration modal
+                })
+                .catch(error => {
+                    // Log and alert any errors during registration
+                    console.error('Error:', error);
+                    alert('Registration failed. Please try again.');
+                });
+            });
+    
+            // Event listener to open the forgot password modal
+            document.querySelector('.options a:nth-child(2)').addEventListener('click', function(e) {
+                e.preventDefault(); // Prevent the default link behavior
+                document.getElementById('forgotPasswordModal').style.display = 'block'; // Show the forgot password modal
+            });
+    
+            // Event listener to close the forgot password modal
+            document.querySelector('#forgotPasswordModal .close').addEventListener('click', function() {
+                document.getElementById('forgotPasswordModal').style.display = 'none'; // Hide the forgot password modal
+            });
+    
+            // Forgot password form submission handling
+            document.getElementById('forgotPasswordForm').addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent the form from submitting the traditional way
+                const email = document.getElementById('forgotEmail').value;
+    
+                // Make a POST request to the forgot password API endpoint
+                fetch('/api/accounts/forgot-password/', {
+                    method: 'POST',
+                    headers: {
+                        'X-API-KEY': "{{ api_key }}", // Replace with your actual API key variable
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: email })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to send reset link');
+                    }
+                    alert('A reset link has been sent to your email address.'); // Alert the user upon successful link send
+                    document.getElementById('forgotPasswordModal').style.display = 'none'; // Hide the forgot password modal
+                })
+                .catch(error => {
+                    // Log and alert any errors during the forgot password process
+                    console.error('Error:', error);
+                    alert('Error sending reset link. Please try again.');
+                });
+            });
+        });
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,443 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Dashboard</title>
+    <!-- Link to the stylesheet for dashboard styling -->
+    <link rel="stylesheet" href="{% static 'css/styles_dash.css' %}">
+    <!-- Favicon for the website -->
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+</head>
+<body>
+    <!-- Header section of the dashboard -->
+    <div class="dashboard-header">
+        <h1>Item Dashboard</h1>
+        <!-- User controls including logout -->
+        <div class="user-controls">
+            <button id="logoutButton" class="button logout">Logout</button>
+        </div>
+        <!-- Display stats such as total categories and items -->
+        <div class="dashboard-stats">
+            <div class="stats-item">
+                Total Categories: <span id="total-categories"></span>
+            </div>
+            <div class="stats-item">
+                Total Items: <span id="total-items"></span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Controls for adding new items/categories and search/filter functionality -->
+    <div class="dashboard-controls">
+        <button class="button" id="newCategoryButton">New Item Category</button>
+        <button class="button new-item" id="newItemButton">New Item</button>
+
+        <!-- Search bar for item lookup -->
+        <div class="search-bar">
+            <input type="text" placeholder="Search">
+            <button class="button search-button">Search</button>
+        </div>
+        <!-- Sorting and filtering options -->
+        <div class="sort-filter-bar">
+            <select class="sort-select">
+                <option value="">Sort by</option>
+                <option value="name">Name</option>
+                <option value="-name">Name (desc)</option>
+                <!-- Additional sorting options can be added here -->
+            </select>
+            <select class="filter-select">
+                <option value="">Filter by Category</option>
+                <!-- Filter options to be dynamically populated here -->
+            </select>
+        </div>
+    </div>
+
+    <!-- Table for displaying items with headers -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>Name</th>
+                <th>Tags</th>
+                <th>Category</th>
+                <th>In Stock</th>
+                <th>Available Stock</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Table rows with item details will be dynamically added here -->
+        </tbody>
+    </table>
+
+    <!-- Modal for adding a new item -->
+    <div id="newItemModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span> <!-- Close button for the modal -->
+            <form id="newItemForm">
+                <h2>New Item</h2>
+                <!-- Form fields for adding a new item -->
+                <div class="form-group">
+                    <label for="itemName">Name:</label>
+                    <input type="text" id="itemName" name="itemName" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemSKU">SKU:</label>
+                    <input type="text" id="itemSKU" name="itemSKU" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemCategory">Category:</label>
+                    <select id="itemCategory" name="itemCategory" required>
+                        <option value="">Select Category</option>
+                        <!-- Options for categories will be populated here -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="itemTags">Tags:</label>
+                    <input type="text" id="itemTags" name="itemTags" required>
+                </div>
+                <div class="form-group">
+                    <label for="itemStock">In Stock:</label>
+                    <select id="itemStock" name="itemStock" required>
+                        <option value="">Select</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="itemAvailableStock">Available Stock:</label>
+                    <input type="number" id="itemAvailableStock" name="itemAvailableStock" required>
+                </div>
+                <div class="form-group form-actions">
+                    <input type="submit" value="Submit">
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal for adding a new category -->
+    <div id="newCategoryModal" class="modal">
+        <div class="modal-content">
+            <span class="close_category">&times;</span> <!-- Close button for the modal -->
+            <form id="newCategoryForm">
+                <h2>New Category</h2>
+                <!-- Form field for new category name -->
+                <div class="form-group">
+                    <label for="categoryName">Name:</label>
+                    <input type="text" id="categoryName" name="categoryName" required>
+                </div>
+                <div class="form-group form-actions">
+                    <input type="submit" value="Submit">
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+      
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Redirect to login page if not authenticated
+            if (!localStorage.getItem('authToken')) {
+                window.location.href = '/accounts/login_page/'; 
+            }
+            // Declaration of variables pointing to DOM elements
+            const itemsTableBody = document.querySelector('.items-table tbody');
+            const searchInput = document.querySelector('.search-bar input');
+            const sortSelect = document.querySelector('.sort-select');
+            const filterSelect = document.querySelector('.filter-select');
+            const totalCategoriesSpan = document.getElementById('total-categories');
+            const totalItemsSpan = document.getElementById('total-items');
+            const newItemButton = document.getElementById('newItemButton'); 
+            const modal = document.getElementById('newItemModal'); 
+            const closeModalSpan = document.querySelector('.close');
+            const close_category = document.querySelector('.close_category');  
+            const categorySelect = document.getElementById('itemCategory'); 
+            const newCategoryButton = document.getElementById('newCategoryButton'); 
+            const modalCategory = document.getElementById('newCategoryModal');
+            
+            // Function to update total categories and items counts
+            function updateCounts() {
+                // Fetch and update total categories count
+                fetch('/api/total_categories/', {
+                    headers: {
+                        'X-API-KEY':'{{ api_key }}',
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Token ' + localStorage.getItem('authToken'),
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    totalCategoriesSpan.textContent = data.total_categories;
+                })
+                .catch(error => console.error('Error fetching total categories:', error));
+                
+                // Fetch and update total items count
+                fetch('/api/total_items/', {
+                    headers: {
+                        'X-API-KEY':"{{ api_key }}",
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Token ' + localStorage.getItem('authToken'),
+                    },
+                 } )
+                .then(response => response.json())
+                .then(data => {
+                    totalItemsSpan.textContent = data.total_items;
+                })
+                .catch(error => console.error('Error fetching total items:', error));
+            }
+        
+            // Debounce function to limit the frequency of function execution
+            function debounce(func, delay) {
+                let inDebounce;
+                return function() {
+                    const context = this;
+                    const args = arguments;
+                    clearTimeout(inDebounce);
+                    inDebounce = setTimeout(() => func.apply(context, args), delay);
+                };
+            }
+        
+            // Function to fetch and display items from the API
+            function fetchItems() {
+                const baseUrl = window.location.origin;
+                const itemsApiUrl = `${baseUrl}/api/items/`;
+    
+                let params = new URLSearchParams();
+    
+                if (searchInput.value) {
+                    params.set('search', searchInput.value);
+                }
+    
+                if (sortSelect.value) {
+                    params.set('ordering', sortSelect.value);
+                }
+    
+                if (filterSelect.value) {
+                    params.set('category', filterSelect.value);
+                }
+    
+                // Combine the items API URL with the query parameters
+                const urlWithParams = `${itemsApiUrl}?${params.toString()}`;
+    
+                fetch(urlWithParams, {
+                    headers: {
+                        'X-API-KEY': "{{ api_key }}", // Replace "{{ api_key }}" with the actual key retrieval method if needed
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Token ' + localStorage.getItem('authToken'),
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Clear the table and repopulate with new data
+                    itemsTableBody.innerHTML = data.map(item => `
+                        <tr>
+                            <td>${item.sku}</td>
+                            <td>${item.name}</td>
+                            <td>${item.tags}</td>
+                            <td>${item.category_name}</td>
+                            <td>${item.in_stock === 'Yes' ? 'Yes' : 'No'}</td>
+                            <td>${item.available_stock}</td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(error => {
+                    console.error('Error fetching items:', error);
+                });
+            }
+    
+            // Populate category filter options from the API
+            function populateFilterOptions() {
+                fetch('/api/categories/', {
+                    headers: {
+                        'X-API-KEY':"{{ api_key }}",
+                        'Content-Type': 'application/json',
+                    },
+                 })
+                .then(response => response.json())
+                .then(categories => {
+                    filterSelect.innerHTML = '<option value="">Filter by Category</option>';
+                    categories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id; // Assuming the API uses IDs for filtering
+                        option.textContent = category.name;
+                        filterSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching categories:', error));
+            }
+    
+            // Function to populate category dropdown
+            function populateCategoryDropdown() {
+                fetch('/api/categories/', {
+                    headers: {
+                        'X-API-KEY':"{{ api_key }}",
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Token ' + localStorage.getItem('authToken'),
+                    },
+                 })
+                .then(response => response.json())
+                .then(categories => {
+                    // Clear existing options first
+                    categorySelect.innerHTML = '<option value="">Select Category</option>';
+                    categories.forEach(category => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = category.id; // Assuming your category objects have an 'id'
+                        optionElement.textContent = category.name; // Assuming your category objects have a 'name'
+                        categorySelect.appendChild(optionElement);
+                    });
+                })
+                .catch(error => console.error('Error fetching categories:', error));
+            }
+
+            // CSRF token retrieval function for POST requests
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+        
+            // Initialize event listeners for UI elements
+            function initializeEventListeners() {
+                // Debounce search input to reduce fetch frequency
+                const debouncedFetchItems = debounce(fetchItems, 300);
+                
+                // Event listeners for search, sorting, and filtering
+                searchInput.addEventListener('input', debouncedFetchItems);
+                sortSelect.addEventListener('change', fetchItems);
+                filterSelect.addEventListener('change', fetchItems);
+
+                // Event listeners for opening and closing modal
+                newItemButton.addEventListener('click', function() {
+                    modal.style.display = 'block'; 
+                });
+                newCategoryButton.addEventListener('click', function() {
+                    modalCategory.style.display = 'block'; 
+                });
+                closeModalSpan.addEventListener('click', function() {
+                    modal.style.display = 'none'; 
+                });
+                close_category.addEventListener('click', function() {
+                    modalCategory.style.display = 'none'; 
+                });
+                window.addEventListener('click', function(event) {
+                    if (event.target == modal) {
+                        modal.style.display = 'none'; 
+                    }
+                });
+                window.addEventListener('click', function(event) {
+                    if (event.target == modalCategory) {
+                        modalCategory.style.display = 'none'; 
+                    }
+                });
+                
+                // Handling new item form submission
+                document.getElementById('newItemForm').addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    const formData = {
+                        name: document.getElementById('itemName').value,
+                        sku: document.getElementById('itemSKU').value,
+                        category: document.getElementById('itemCategory').value,
+                        tags: document.getElementById('itemTags').value,
+                        in_stock: document.getElementById('itemStock').value=== "true" ? "Yes" : "No",
+                        available_stock: document.getElementById('itemAvailableStock').value,
+                    };
+    
+                    // POST request to create a new item
+                    fetch('/api/items/', {
+                        method: 'POST',
+                        headers: {
+                            'X-API-KEY':"{{ api_key }}",
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'Authorization': 'Token ' + localStorage.getItem('authToken'), 
+                        },
+                        body: JSON.stringify(formData),
+                        credentials: 'include' 
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json(); 
+                    })
+                    .then(data => {
+                        console.log('Item created:', data);
+                        alert("New Item added successfully!");
+                        window.location.href = '/accounts/dashboard/';
+                    })
+                    .catch(error => {
+                        console.error('Error creating item:', error);
+                        alert("Failed to add item. Please try with New SKU");
+                    });
+                });
+                
+                // Handling new category form submission
+                document.getElementById('newCategoryForm').addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    const formData = {
+                        name: document.getElementById('categoryName').value,
+                    };
+                    
+                    // POST request to create a new category
+                    fetch('/api/categories/', {
+                        method: 'POST',
+                        headers: {
+                            'X-API-KEY':"{{ api_key }}",
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'Authorization': 'Token ' + localStorage.getItem('authToken'), 
+                        },
+                        body: JSON.stringify(formData),
+                        credentials: 'include' 
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json(); 
+                    })
+                    .then(data => {
+                        console.log('Category created:', data);
+                        alert("New Category added successfully!");
+                        // Redirect to dashboard only on successful creation
+                        window.location.href = '/accounts/dashboard/'; 
+                    })
+                    .catch(error => {
+                        console.error('Error creating Category:', error);
+                        alert("Failed to add Category. Please try with New category name");
+                    });
+                });
+            }
+
+            // Logout functionality
+            document.getElementById('logoutButton').addEventListener('click', function() {
+                localStorage.removeItem('authToken'); // Remove the stored token
+                window.location.href = '/accounts/login_page/'; // Redirect to the login page
+                // Optionally, inform the backend that the user has logged out
+                });
+            
+            // Calls functions to initialize the page with data and set up UI event listeners
+            function initialize() {
+                populateFilterOptions(); // Populate category filter dropdown
+                fetchItems(); // Fetch and display items
+                updateCounts(); // Update the display of total categories and items
+                initializeEventListeners(); // Set up event listeners for user interactions
+                populateCategoryDropdown(); // Populate the category dropdown for the new item modal
+            }
+        
+            initialize(); // Kick off the page initialization process
+        });
+    </script>
+    
+</body>
+</html>
